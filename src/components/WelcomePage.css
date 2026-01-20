@@ -1,0 +1,459 @@
+/* 欢迎页面容器 */
+.welcome-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* 欢迎内容区域 */
+.welcome-content {
+  position: relative;
+  z-index: 10;
+  text-align: center;
+  padding: 40px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  max-width: 800px;
+  animation: fadeInUp 1s ease-out;
+}
+
+/* 深色模式适配 */
+.dark-mode .welcome-content {
+  background: rgba(31, 31, 31, 0.9);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+/* 动画效果 - 淡入上移 */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 浮动图标动画 */
+.floating-icon {
+  animation: float 3s ease-in-out infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+/* 标题样式 */
+.welcome-title {
+  font-size: 36px !important;
+  font-weight: 700 !important;
+  margin-bottom: 16px !important;
+  background: linear-gradient(135deg, #1890ff 0%, #40a9ff 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  animation: titleGlow 2s ease-in-out infinite alternate;
+}
+
+/* 标题发光动画 */
+@keyframes titleGlow {
+  from {
+    filter: drop-shadow(0 0 5px rgba(24, 144, 255, 0.3));
+  }
+  to {
+    filter: drop-shadow(0 0 15px rgba(24, 144, 255, 0.6));
+  }
+}
+
+/* 副标题样式 */
+.welcome-subtitle {
+  font-size: 18px !important;
+  margin-bottom: 40px !important;
+  color: #666 !important;
+  animation: subtitleFadeIn 1.2s ease-out 0.5s both;
+}
+
+.dark-mode .welcome-subtitle {
+  color: #ccc !important;
+}
+
+/* 副标题淡入动画 */
+@keyframes subtitleFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 打字机效果动画 */
+@keyframes typing {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+@keyframes blink-caret {
+  from, to {
+    border-color: transparent;
+  }
+  50% {
+    border-color: #1890ff;
+  }
+}
+
+/* 波浪动画 */
+@keyframes wave {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  25% {
+    transform: translateY(-10px);
+  }
+  50% {
+    transform: translateY(0);
+  }
+  75% {
+    transform: translateY(10px);
+  }
+}
+
+/* 旋转动画 */
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 缩放动画 */
+@keyframes scaleInOut {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+/* 功能卡片更丰富的悬停效果 */
+.feature-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 12px 30px rgba(24, 144, 255, 0.3);
+}
+
+.dark-mode .feature-card:hover {
+  box-shadow: 0 12px 30px rgba(24, 144, 255, 0.4);
+}
+
+/* 进入按钮更丰富的动画效果 */
+.enter-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.enter-button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.enter-button:hover::before {
+  width: 300px;
+  height: 300px;
+}
+
+/* 页脚淡入动画 */
+.welcome-footer {
+  animation: footerFadeIn 1.5s ease-out 1s both;
+}
+
+@keyframes footerFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 欢迎动画容器添加循环动画 */
+.welcome-animation {
+  animation: welcomePulse 4s ease-in-out infinite;
+}
+
+@keyframes welcomePulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+}
+
+/* 背景粒子添加更多样式和动画 */
+.floating-particle {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: rgba(24, 144, 255, 0.3);
+  border-radius: 50%;
+  animation: floatParticle linear infinite;
+  box-shadow: 0 0 10px rgba(24, 144, 255, 0.5);
+}
+
+.dark-mode .floating-particle {
+  background: rgba(24, 144, 255, 0.5);
+  box-shadow: 0 0 15px rgba(24, 144, 255, 0.7);
+}
+
+/* 粒子浮动动画增强 */
+@keyframes floatParticle {
+  0% {
+    transform: translateY(100vh) rotate(0deg);
+    opacity: 0;
+    scale: 0.5;
+  }
+  10% {
+    opacity: 1;
+    scale: 1;
+  }
+  50% {
+    transform: translateY(50vh) rotate(180deg);
+    scale: 1.2;
+  }
+  90% {
+    opacity: 1;
+    scale: 1;
+  }
+  100% {
+    transform: translateY(-10vh) rotate(360deg);
+    opacity: 0;
+    scale: 0.5;
+  }
+}
+
+/* 为特定功能图标添加个性化动画 */
+.feature-card:nth-child(1) .feature-icon {
+  animation: pulse 2s infinite, rotate 10s linear infinite;
+}
+
+.feature-card:nth-child(2) .feature-icon {
+  animation: pulse 2s infinite, wave 3s ease-in-out infinite;
+}
+
+.feature-card:nth-child(3) .feature-icon {
+  animation: pulse 2s infinite, scaleInOut 3s ease-in-out infinite;
+}
+
+.feature-card:nth-child(4) .feature-icon {
+  animation: pulse 2s infinite, float 3s ease-in-out infinite;
+}
+
+/* 功能卡片网格 */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 20px;
+  margin-bottom: 40px;
+}
+
+/* 功能卡片样式 */
+.feature-card {
+  padding: 20px;
+  background: rgba(24, 144, 255, 0.05);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  animation: slideIn 0.8s ease-out;
+}
+
+/* 深色模式下的功能卡片 */
+.dark-mode .feature-card {
+  background: rgba(24, 144, 255, 0.1);
+}
+
+/* 功能卡片悬停效果 */
+.feature-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(24, 144, 255, 0.2);
+}
+
+.dark-mode .feature-card:hover {
+  box-shadow: 0 8px 20px rgba(24, 144, 255, 0.3);
+}
+
+/* 功能图标样式 */
+.feature-icon {
+  font-size: 32px;
+  margin-bottom: 12px;
+  animation: pulse 2s infinite;
+}
+
+/* 脉冲动画 */
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+/* 进入按钮样式 */
+.enter-button {
+  padding: 12px 36px !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  border-radius: 25px !important;
+  background: linear-gradient(135deg, #1890ff 0%, #40a9ff 100%) !important;
+  border: none !important;
+  box-shadow: 0 4px 15px rgba(24, 144, 255, 0.3) !important;
+  transition: all 0.3s ease !important;
+  animation: buttonGlow 2s ease-in-out infinite alternate;
+}
+
+/* 按钮发光动画 */
+@keyframes buttonGlow {
+  from {
+    box-shadow: 0 4px 15px rgba(24, 144, 255, 0.3);
+  }
+  to {
+    box-shadow: 0 6px 20px rgba(24, 144, 255, 0.5);
+  }
+}
+
+/* 按钮悬停效果 */
+.enter-button:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 20px rgba(24, 144, 255, 0.4) !important;
+}
+
+/* 页脚样式 */
+.welcome-footer {
+  margin-top: 30px;
+  font-size: 14px;
+}
+
+/* 背景动态效果 */
+.background-animation {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* 浮动粒子样式 */
+.floating-particle {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: rgba(24, 144, 255, 0.3);
+  border-radius: 50%;
+  animation: floatParticle linear infinite;
+}
+
+.dark-mode .floating-particle {
+  background: rgba(24, 144, 255, 0.5);
+}
+
+/* 粒子浮动动画 */
+@keyframes floatParticle {
+  0% {
+    transform: translateY(100vh) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-10vh) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+/* 各个卡片的延迟动画 */
+.feature-card:nth-child(1) {
+  animation-delay: 0.1s;
+}
+
+.feature-card:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.feature-card:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+.feature-card:nth-child(4) {
+  animation-delay: 0.4s;
+}
+
+/* 滑入动画 */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .welcome-content {
+    padding: 30px 20px;
+    margin: 20px;
+  }
+  
+  .welcome-title {
+    font-size: 28px !important;
+  }
+  
+  .features-grid {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 15px;
+  }
+  
+  .feature-card {
+    padding: 15px;
+  }
+}
