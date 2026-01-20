@@ -449,6 +449,14 @@ export class Enemy {
     } else {
       this.shadowColor = this.color;
     }
+    
+    // 添加边界限制，根据状态决定是否限制在屏幕内
+    // 只有在巡逻、追逐和攻击状态下才限制在屏幕内
+    // 逃跑状态下允许离开屏幕
+    if (this.state === EnemyState.PATROLLING || this.state === EnemyState.CHASING || this.state === EnemyState.ATTACKING) {
+      this.x = Math.max(this.size, Math.min(canvasWidth - this.size, this.x));
+      this.y = Math.max(this.size, Math.min(canvasHeight - this.size, this.y));
+    }
   }
   
   draw(ctx) {

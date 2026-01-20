@@ -1,16 +1,212 @@
-# React + Vite
+# MyTool - 实用工具集合
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+一个基于 React + Vite 构建的实用工具集合，包含多种工具组件和一个完整的小飞机游戏。
 
-Currently, two official plugins are available:
+## 🚀 项目简介
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+MyTool 是一个集成了多种实用工具的 Web 应用，旨在提供便捷的在线工具服务。项目采用模块化设计，代码结构清晰，易于扩展和维护。
 
-## React Compiler
+## 🛠️ 技术栈
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **前端框架**: React 18
+- **构建工具**: Vite
+- **UI 组件库**: Ant Design
+- **编程语言**: JavaScript
+- **CSS**: CSS Modules
 
-## Expanding the ESLint configuration
+## ✨ 功能特性
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### 工具组件
+
+1. **PlaneGame - 小飞机游戏**
+   - 完整的太空射击游戏
+   - 玩家飞机跟随鼠标移动
+   - 多种敌人类型和 Boss 战斗
+   - 粒子系统和爆炸效果
+   - 升级系统和加成效果
+   - 星空背景和视觉特效
+
+2. **ColorGamutTest - 色彩测试**
+   - 测试显示器色彩范围
+   - 多种色彩模式和测试方法
+
+3. **CsvToJson - CSV 转 JSON**
+   - 在线转换 CSV 文件为 JSON 格式
+   - 支持自定义分隔符
+   - 实时预览转换结果
+
+4. **IpValidator - IP 地址验证**
+   - 验证 IPv4 地址格式
+   - 支持批量验证
+
+5. **JsonFormatter - JSON 格式化**
+   - 格式化 JSON 数据
+   - 压缩和美化 JSON
+   - 语法高亮显示
+
+6. **MD5Generator - MD5 生成器**
+   - 生成文本的 MD5 哈希值
+   - 支持多种编码格式
+
+7. **PersonalLog - 个人日志**
+   - 简单的在线日志记录
+   - 支持创建和查看日志
+
+8. **TextConverter - 文本转换**
+   - 文本大小写转换
+   - 全角半角转换
+   - 去除空格和特殊字符
+
+9. **TimestampConverter - 时间戳转换**
+   - Unix 时间戳与日期格式转换
+   - 支持多种时间格式
+
+10. **UrlEncoderDecoder - URL 编解码**
+    - URL 编码和解码
+    - 支持多种编码格式
+
+### 游戏特色
+
+- 🎮 流畅的游戏体验
+- 🚀 多种敌人类型和攻击模式
+- 👾 Boss 战斗系统
+- 💥 精美的粒子效果
+- 🌟 星空背景和视觉特效
+- ⚡ 升级系统和加成效果
+- 🎯 精确的碰撞检测
+
+## 📁 项目结构
+
+```
+src/
+├── assets/           # 静态资源
+├── components/       # 组件目录
+│   ├── Tools/        # 工具组件
+│   │   ├── PlaneGame/  # 小飞机游戏
+│   │   │   ├── bullet.js      # 子弹类
+│   │   │   ├── constants.js   # 常量定义
+│   │   │   ├── enemy.js       # 敌人和Boss类
+│   │   │   ├── particle.js    # 粒子系统
+│   │   │   ├── player.js      # 玩家类
+│   │   │   ├── powerUp.js     # 加成包类
+│   │   │   └── star.js        # 星空背景
+│   │   ├── ColorGamutTest.jsx
+│   │   ├── CsvToJson.jsx
+│   │   ├── IpValidator.jsx
+│   │   ├── JsonFormatter.jsx
+│   │   ├── MD5Generator.jsx
+│   │   ├── PersonalLog.jsx
+│   │   ├── PlaneGame.jsx
+│   │   ├── TextConverter.jsx
+│   │   ├── TimestampConverter.jsx
+│   │   └── UrlEncoderDecoder.jsx
+│   ├── ParticleEffect.jsx
+│   └── WelcomePage.jsx
+├── img/              # 图片资源
+├── App.css           # 应用样式
+├── App.jsx           # 应用主组件
+├── index.css         # 全局样式
+└── main.jsx          # 应用入口
+```
+
+## 📦 安装与运行
+
+### 安装依赖
+
+```bash
+npm install
+```
+
+### 开发模式
+
+```bash
+npm run dev
+```
+
+### 构建生产版本
+
+```bash
+npm run build
+```
+
+### 预览生产构建
+
+```bash
+npm run preview
+```
+
+## 🎮 小飞机游戏说明
+
+### 游戏规则
+
+- 鼠标控制飞机移动
+- 自动发射子弹，消灭敌人
+- 小型敌人：1分，1滴血
+- 中型敌人：5分，3滴血
+- 重型敌人：20分，10滴血
+- 被敌人命中3次游戏结束
+
+### 游戏特色
+
+1. **敌人 AI 系统**
+   - 不同类型敌人有不同行为模式
+   - 敌人状态机：巡逻、追逐、攻击、逃跑
+   - Boss 战多阶段设计
+
+2. **升级系统**
+   - 1级：单发射击
+   - 2级：双发射击
+   - 3级：三发射击
+   - 4级：三发射击 + 激光武器
+
+3. **加成效果**
+   - 生命值恢复
+   - 攻击速度提升
+   - 无敌状态
+   - 武器升级
+
+4. **视觉效果**
+   - 星空背景滚动
+   - 飞机拖尾效果
+   - 粒子爆炸效果
+   - 武器发光效果
+
+## 🤝 贡献指南
+
+欢迎提交 Issue 和 Pull Request！
+
+1. Fork 本仓库
+2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 打开 Pull Request
+
+## 📝 开发规范
+
+- 代码风格：ESLint + Prettier
+- 组件命名：PascalCase
+- 文件命名：PascalCase 或 camelCase
+- 注释：关键代码添加注释说明
+- 模块化：功能模块化，代码解耦
+
+## 📄 许可证
+
+MIT License - 查看 [LICENSE](LICENSE) 文件了解详情
+
+## 📧 联系方式
+
+如有问题或建议，欢迎通过以下方式联系：
+
+- 项目地址：[https://github.com/yourusername/MyTool](https://github.com/yourusername/MyTool)
+- Issue：[https://github.com/yourusername/MyTool/issues](https://github.com/yourusername/MyTool/issues)
+
+## 📊 项目状态
+
+![GitHub Repo Stars](https://img.shields.io/github/stars/yourusername/MyTool?style=social)
+![GitHub Forks](https://img.shields.io/github/forks/yourusername/MyTool?style=social)
+![GitHub Issues](https://img.shields.io/github/issues/yourusername/MyTool)
+![GitHub Pull Requests](https://img.shields.io/github/issues-pr/yourusername/MyTool)
+
+---
+
+**MyTool** - 让工具变得简单易用！ 🎉
