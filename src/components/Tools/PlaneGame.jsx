@@ -1,7 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Card, Typography, Button, Space } from 'antd';
-
-// 导入游戏相关模块
 import Star from './PlaneGame/star';
 import Particle from './PlaneGame/particle';
 import PowerUp from './PlaneGame/powerUp';
@@ -9,6 +7,7 @@ import { Bullet, EnemyBullet } from './PlaneGame/bullet';
 import Player from './PlaneGame/player';
 import { Enemy, Boss } from './PlaneGame/enemy';
 import { GAME_CONFIG } from './PlaneGame/constants';
+import assetManager from './PlaneGame/assetManager';
 
 const { Title, Text } = Typography;
 
@@ -30,6 +29,18 @@ const PlaneGame = () => {
     invulnerable: false,
     rapidFireEndTime: 0,
     invulnerableEndTime: 0
+  });
+  
+  // 视觉反馈效果
+  const hitStopRef = useRef({ active: false, startTime: 0, duration: 50 }); // 50ms 顿帧
+  const cameraShakeRef = useRef({ active: false, startTime: 0, duration: 200, intensity: 5 }); // 200ms 震动
+  
+  // 空间分区优化
+  const gridRef = useRef({
+    cells: {},
+    cellSize: 50, // 每个网格单元的大小
+    width: 0,
+    height: 0
   });
   
   // 星空背景相关
@@ -89,6 +100,7 @@ const PlaneGame = () => {
   const bossSpawnedRef = useRef(false);
   const lastBossSpawnScoreRef = useRef(0);
   const bossSpawnThreshold = GAME_CONFIG.BOSS_SPAWN_THRESHOLD;
+  const gameStartTimeRef = useRef(Date.now());
   
   // 根据难度获取游戏配置
   const getGameConfig = () => {
@@ -342,6 +354,51 @@ const PlaneGame = () => {
     console.log('生成敌人后数量:', enemiesRef.current.length);
   };
   
+  // 网格辅助函数
+  const getGridKey = (x, y) => {
+    const grid = gridRef.current;
+    const cellX = Math.floor(x / grid.cellSize);
+    const cellY = Math.floor(y / grid.cellSize);
+    return `${cellX},${cellY}`;
+  };
+  
+  const clearGrid = () => {
+    gridRef.current.cells = {};
+  };
+  
+  const addToGrid = (obj, type) => {
+    if (!obj || !obj.x || !obj.y) return;
+    
+    const key = getGridKey(obj.x, obj.y);
+    if (!gridRef.current.cells[key]) {
+      gridRef.current.cells[key] = [];
+    }
+    gridRef.current.cells[key].push({ obj, type });
+  };
+  
+  const getNearbyObjects = (obj, types) => {
+    const nearby = [];
+    const grid = gridRef.current;
+    const cellX = Math.floor(obj.x / grid.cellSize);
+    const cellY = Math.floor(obj.y / grid.cellSize);
+    
+    // 检查周围3x3的网格
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dy = -1; dy <= 1; dy++) {
+        const key = `${cellX + dx},${cellY + dy}`;
+        if (grid.cells[key]) {
+          grid.cells[key].forEach(item => {
+            if (types.includes(item.type)) {
+              nearby.push(item.obj);
+            }
+          });
+        }
+      }
+    }
+    
+    return nearby;
+  };
+  
   // 游戏主循环
   const gameLoop = () => {
     const canvas = canvasRef.current;
@@ -350,9 +407,41 @@ const PlaneGame = () => {
     const ctx = canvas.getContext('2d');
     const now = Date.now();
     
+    // 处理Hit Stop
+    if (hitStopRef.current.active) {
+      const elapsed = now - hitStopRef.current.startTime;
+      if (elapsed < hitStopRef.current.duration) {
+        // 暂停游戏循环
+        gameLoopRef.current = requestAnimationFrame(gameLoop);
+        return;
+      } else {
+        hitStopRef.current.active = false;
+      }
+    }
+    
     // 清空画布
     ctx.fillStyle = '#0a0a1a';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // 处理Camera Shake
+    if (cameraShakeRef.current.active) {
+      const elapsed = now - cameraShakeRef.current.startTime;
+      if (elapsed < cameraShakeRef.current.duration) {
+        const progress = 1 - (elapsed / cameraShakeRef.current.duration);
+        const intensity = cameraShakeRef.current.intensity * progress;
+        ctx.save();
+        ctx.translate(Math.random() * intensity * 2 - intensity, Math.random() * intensity * 2 - intensity);
+      }
+    }
+    
+    // 清空网格
+    clearGrid();
+    
+    // 将游戏对象添加到网格
+    enemiesRef.current.forEach(enemy => addToGrid(enemy, 'enemy'));
+    bulletsRef.current.forEach(bullet => addToGrid(bullet, 'bullet'));
+    enemyBulletsRef.current.forEach(bullet => addToGrid(bullet, 'enemyBullet'));
+    powerUpsRef.current.forEach(powerUp => addToGrid(powerUp, 'powerUp'));
     
     // 更新和绘制星空背景
     starsRef.current.forEach(star => {
@@ -403,7 +492,7 @@ const PlaneGame = () => {
               bullet.size = 6;
               bullet.damage = 2;
               // 添加散射效果
-              bullet.vx = Math.sin(angle) * 2;
+              bullet.vx = Math.cos(angle) * 2;
               bulletsRef.current.push(bullet);
             }
           } else {
@@ -441,7 +530,7 @@ const PlaneGame = () => {
                 bullet.size = 6;
                 bullet.damage = 2;
                 // 添加散射效果
-                bullet.vx = Math.sin(angle) * 2;
+              bullet.vx = Math.cos(angle) * 2;
                 bulletsRef.current.push(bullet);
               }
             });
@@ -485,7 +574,7 @@ const PlaneGame = () => {
                 bullet.size = 7;
                 bullet.damage = 3;
                 // 添加散射效果
-                bullet.vx = Math.sin(angle) * 2;
+                bullet.vx = Math.cos(angle) * 2;
                 bulletsRef.current.push(bullet);
               }
             });
@@ -535,7 +624,7 @@ const PlaneGame = () => {
                 bullet.size = 8;
                 bullet.damage = 4;
                 // 添加散射效果
-                bullet.vx = Math.sin(angle) * 2;
+                bullet.vx = Math.cos(angle) * 2;
                 bulletsRef.current.push(bullet);
               }
             });
@@ -648,9 +737,11 @@ const PlaneGame = () => {
       return !bullet.isOutOfBounds(canvas.width, canvas.height);
     });
     
-    // 检查玩家与敌人的碰撞
+    // 检查玩家与敌人的碰撞 - 使用网格优化
+    const nearbyEnemies = getNearbyObjects(playerRef.current, ['enemy']);
     enemiesRef.current = enemiesRef.current.filter(enemy => {
-      if (checkCollision(playerRef.current, enemy)) {
+      // 只检查附近的敌人
+      if (nearbyEnemies.includes(enemy) && checkCollision(playerRef.current, enemy)) {
         console.log('玩家与敌人碰撞！', '敌人类型:', enemy.type, '当前生命值:', enemy.health, '敌人得分:', enemy.score, '难度:', difficulty);
         
         // 使用当前的加成效果状态
@@ -744,13 +835,16 @@ const PlaneGame = () => {
       }
     }
     
-    // 检查子弹与敌人的碰撞
+    // 检查子弹与敌人的碰撞 - 使用网格优化
     bulletsRef.current = bulletsRef.current.filter(bullet => {
       let isActive = true;
       
+      // 获取子弹附近的敌人
+      const nearbyEnemies = getNearbyObjects(bullet, ['enemy']);
+      
       // 检查子弹与普通敌人的碰撞
       enemiesRef.current = enemiesRef.current.filter(enemy => {
-        if (checkCollision(bullet, enemy)) {
+        if (nearbyEnemies.includes(enemy) && checkCollision(bullet, enemy)) {
           console.log('子弹击中敌人！', '敌人类型:', enemy.type, '当前生命值:', enemy.health, '敌人得分:', enemy.score);
           // 使用子弹的伤害属性，默认伤害为1
           const damage = bullet.damage || 1;
@@ -806,6 +900,10 @@ const PlaneGame = () => {
         // Boss受到伤害
         const hit = bossRef.current.takeDamage(1);
         if (hit) {
+          // 触发Hit Stop和Camera Shake效果
+          hitStopRef.current = { active: true, startTime: Date.now(), duration: 30 };
+          cameraShakeRef.current = { active: true, startTime: Date.now(), duration: 150, intensity: 3 };
+          
           // 生成爆炸粒子效果
           for (let i = 0; i < 20; i++) {
             particlesRef.current.push(new Particle(bossRef.current.x, bossRef.current.y, 'explosion'));
@@ -816,9 +914,10 @@ const PlaneGame = () => {
       return isActive;
     });
     
-    // 检查玩家与加成包的碰撞
+    // 检查玩家与加成包的碰撞 - 使用网格优化
+    const nearbyPowerUps = getNearbyObjects(playerRef.current, ['powerUp']);
     powerUpsRef.current = powerUpsRef.current.filter(powerUp => {
-      if (checkCollision(playerRef.current, powerUp)) {
+      if (nearbyPowerUps.includes(powerUp) && checkCollision(playerRef.current, powerUp)) {
         // 应用加成效果
         applyPowerUp(powerUp.type);
         return false;
@@ -827,9 +926,10 @@ const PlaneGame = () => {
       return true;
     });
     
-    // 检查敌方子弹与玩家的碰撞
+    // 检查敌方子弹与玩家的碰撞 - 使用网格优化
+    const nearbyEnemyBullets = getNearbyObjects(playerRef.current, ['enemyBullet']);
     enemyBulletsRef.current = enemyBulletsRef.current.filter(bullet => {
-      if (checkCollision(playerRef.current, bullet)) {
+      if (nearbyEnemyBullets.includes(bullet) && checkCollision(playerRef.current, bullet)) {
         // 使用当前的加成效果状态
         const currentEffects = bonusEffectsRef.current;
         
@@ -1009,6 +1109,12 @@ const PlaneGame = () => {
           // Boss受到激光伤害
           const hit = bossRef.current.takeDamage(0.5);
           if (hit) {
+            // 触发Hit Stop和Camera Shake效果（激光伤害较轻，效果也较轻）
+            if (Math.random() > 0.7) { // 30%概率触发，避免效果过于频繁
+              hitStopRef.current = { active: true, startTime: Date.now(), duration: 15 };
+              cameraShakeRef.current = { active: true, startTime: Date.now(), duration: 100, intensity: 2 };
+            }
+            
             // 生成激光爆炸粒子效果
             for (let i = 0; i < 15; i++) {
               particlesRef.current.push(new Particle(bossRef.current.x, bossRef.current.y, 'laser'));
@@ -1053,58 +1159,228 @@ const PlaneGame = () => {
     // 绘制UI - 使用ref获取最新状态
     ctx.save();
     
-    // 设置UI文字样式
-    ctx.font = 'bold 24px Arial';
+    // 计算当前游戏时间
+    const gameTime = Math.floor((now - gameStartTimeRef.current) / 1000);
+    
+    // 设置UI文字样式 - 更符合科幻风格
+    ctx.font = 'bold 18px monospace';
     ctx.textAlign = 'left';
     
-    // 分数显示 - 带发光效果
-    ctx.shadowColor = '#ffff00';
+    // 绘制主状态面板
+    const panelX = 15;
+    const panelY = 15;
+    const panelWidth = 280;
+    const panelHeight = 200;
+    
+    // 1. 绘制面板背景（多层次效果）
+    // 外发光效果
+    ctx.shadowColor = '#00d4ff';
+    ctx.shadowBlur = 20;
+    
+    // 主面板渐变背景
+    const panelGradient = ctx.createLinearGradient(panelX, panelY, panelX + panelWidth, panelY);
+    panelGradient.addColorStop(0, 'rgba(10, 10, 30, 0.95)');
+    panelGradient.addColorStop(0.5, 'rgba(20, 20, 50, 0.85)');
+    panelGradient.addColorStop(1, 'rgba(10, 10, 30, 0.95)');
+    ctx.fillStyle = panelGradient;
+    
+    // 圆角矩形背景
+    ctx.beginPath();
+    const radius = 8;
+    ctx.moveTo(panelX + radius, panelY);
+    ctx.lineTo(panelX + panelWidth - radius, panelY);
+    ctx.quadraticCurveTo(panelX + panelWidth, panelY, panelX + panelWidth, panelY + radius);
+    ctx.lineTo(panelX + panelWidth, panelY + panelHeight - radius);
+    ctx.quadraticCurveTo(panelX + panelWidth, panelY + panelHeight, panelX + panelWidth - radius, panelY + panelHeight);
+    ctx.lineTo(panelX + radius, panelY + panelHeight);
+    ctx.quadraticCurveTo(panelX, panelY + panelHeight, panelX, panelY + panelHeight - radius);
+    ctx.lineTo(panelX, panelY + radius);
+    ctx.quadraticCurveTo(panelX, panelY, panelX + radius, panelY);
+    ctx.fill();
+    
+    // 2. 绘制边框（发光效果）
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = '#00d4ff';
+    ctx.strokeStyle = '#00d4ff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    
+    // 3. 绘制网格背景
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = 'rgba(0, 212, 255, 0.1)';
+    ctx.lineWidth = 1;
+    
+    // 垂直线
+    for (let x = panelX + 20; x < panelX + panelWidth; x += 40) {
+      ctx.beginPath();
+      ctx.moveTo(x, panelY);
+      ctx.lineTo(x, panelY + panelHeight);
+      ctx.stroke();
+    }
+    
+    // 水平线
+    for (let y = panelY + 20; y < panelY + panelHeight; y += 40) {
+      ctx.beginPath();
+      ctx.moveTo(panelX, y);
+      ctx.lineTo(panelX + panelWidth, y);
+      ctx.stroke();
+    }
+    
+    // 4. 绘制动态扫描线
+    const scanLineY = (panelY + (Date.now() * 0.1) % panelHeight);
+    ctx.strokeStyle = 'rgba(0, 212, 255, 0.3)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(panelX, scanLineY);
+    ctx.lineTo(panelX + panelWidth, scanLineY);
+    ctx.stroke();
+    
+    // 5. 绘制标题
+    ctx.font = 'bold 20px monospace';
+    ctx.fillStyle = '#00d4ff';
+    ctx.shadowColor = '#00d4ff';
     ctx.shadowBlur = 10;
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText(`分数: ${scoreRef.current}`, 20, 40);
-    
-    // 生命值显示 - 带颜色变化
-    ctx.shadowColor = '#ff0000';
-    ctx.fillStyle = livesRef.current > 1 ? '#ffffff' : '#ff0000';
-    ctx.fillText(`生命值: ${'❤️'.repeat(livesRef.current)}`, 20, 75);
-    
-    // 等级显示 - 带颜色变化
-    ctx.shadowColor = '#00ff00';
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText(`等级: ${levelRef.current}`, 20, 110);
-    
-    // 敌人数量显示 - 带颜色变化
-    ctx.shadowColor = '#ff8800';
-    ctx.fillStyle = enemiesRef.current.length > 10 ? '#ff0000' : '#ffffff';
-    ctx.fillText(`敌人数量: ${enemiesRef.current.length}`, 20, 145);
-    
-    // 重置阴影
+    ctx.fillText('SYSTEM STATUS', panelX + 20, panelY + 35);
     ctx.shadowBlur = 0;
     
-    // 绘制加成效果状态 - 使用ref获取最新状态
-    const currentBonusEffects = bonusEffectsRef.current;
-    let effectY = 180;
-    let effectHeight = 35;
+    // 6. 绘制状态信息
+    ctx.font = 'bold 16px monospace';
     
-    // 绘制效果背景框
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 2;
-    ctx.fillRect(15, effectY - 10, 220, effectHeight * (currentBonusEffects.rapidFire ? 1 : 0) + effectHeight * (currentBonusEffects.invulnerable ? 1 : 0) + effectHeight * (isLaserActiveRef.current ? 1 : 0) + 10);
-    ctx.strokeRect(15, effectY - 10, 220, effectHeight * (currentBonusEffects.rapidFire ? 1 : 0) + effectHeight * (currentBonusEffects.invulnerable ? 1 : 0) + effectHeight * (isLaserActiveRef.current ? 1 : 0) + 10);
+    // 分数显示
+    ctx.fillStyle = '#ffff00';
+    ctx.fillText(`SCORE: ${scoreRef.current.toLocaleString()}`, panelX + 20, panelY + 70);
+    
+    // 分数进度条
+    const scoreProgress = Math.min(1, scoreRef.current / 1000);
+    const scoreBarGradient = ctx.createLinearGradient(panelX + 20, 0, panelX + panelWidth - 20, 0);
+    scoreBarGradient.addColorStop(0, '#ffff00');
+    scoreBarGradient.addColorStop(1, '#ffaa00');
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    ctx.fillRect(panelX + 20, panelY + 75, panelWidth - 40, 4);
+    ctx.fillStyle = scoreBarGradient;
+    ctx.fillRect(panelX + 20, panelY + 75, (panelWidth - 40) * scoreProgress, 4);
+    
+    // 生命值显示
+    ctx.fillStyle = livesRef.current > 1 ? '#00ff88' : '#ff4444';
+    ctx.fillText(`LIVES: ${'❤️'.repeat(livesRef.current)}`, panelX + 20, panelY + 105);
+    
+    // 生命值进度条
+    const livesProgress = livesRef.current / 3;
+    const livesBarGradient = ctx.createLinearGradient(panelX + 20, 0, panelX + panelWidth - 20, 0);
+    livesBarGradient.addColorStop(0, '#00ff88');
+    livesBarGradient.addColorStop(1, '#00aa66');
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    ctx.fillRect(panelX + 20, panelY + 110, panelWidth - 40, 4);
+    ctx.fillStyle = livesBarGradient;
+    ctx.fillRect(panelX + 20, panelY + 110, (panelWidth - 40) * livesProgress, 4);
+    
+    // 等级显示
+    ctx.fillStyle = '#00d4ff';
+    ctx.fillText(`LEVEL: ${levelRef.current}`, panelX + 20, panelY + 140);
+    
+    // 等级进度条
+    const levelProgress = Math.min(1, (levelRef.current - 1) / 3);
+    const levelBarGradient = ctx.createLinearGradient(panelX + 20, 0, panelX + panelWidth - 20, 0);
+    levelBarGradient.addColorStop(0, '#00d4ff');
+    levelBarGradient.addColorStop(1, '#0088cc');
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    ctx.fillRect(panelX + 20, panelY + 145, panelWidth - 40, 4);
+    ctx.fillStyle = levelBarGradient;
+    ctx.fillRect(panelX + 20, panelY + 145, (panelWidth - 40) * levelProgress, 4);
+    
+    // 敌人数量显示
+    ctx.fillStyle = enemiesRef.current.length > 10 ? '#ff4444' : '#ffaa44';
+    ctx.fillText(`ENEMIES: ${enemiesRef.current.length}`, panelX + 20, panelY + 180);
+    
+    // 敌人数量进度条
+    const enemyProgress = Math.min(1, enemiesRef.current.length / 20);
+    const enemyBarGradient = ctx.createLinearGradient(panelX + 20, 0, panelX + panelWidth - 20, 0);
+    enemyBarGradient.addColorStop(0, '#ffaa44');
+    enemyBarGradient.addColorStop(1, '#ff4444');
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    ctx.fillRect(panelX + 20, panelY + 185, panelWidth - 40, 4);
+    ctx.fillStyle = enemyBarGradient;
+    ctx.fillRect(panelX + 20, panelY + 185, (panelWidth - 40) * enemyProgress, 4);
+    
+    // 7. 绘制游戏时间
+    ctx.fillStyle = '#9999ff';
+    ctx.font = 'bold 14px monospace';
+    ctx.fillText(`TIME: ${gameTime}s`, panelX + panelWidth - 100, panelY + 35);
+    
+    // 8. 绘制难度指示器
+    const difficultyColors = {
+      'easy': '#00ff88',
+      'hard': '#ffaa44',
+      'nightmare': '#ff4444'
+    };
+    ctx.fillStyle = difficultyColors[difficulty] || '#ffffff';
+    ctx.fillText(`DIFFICULTY: ${difficulty.toUpperCase()}`, panelX + 20, panelY + 210);
+    
+    // 9. 绘制加成效果状态 - 使用ref获取最新状态
+    const currentBonusEffects = bonusEffectsRef.current;
+    let effectY = panelY + panelHeight + 10;
+    let effectHeight = 45;
+    
+    const effectCount = (currentBonusEffects.rapidFire ? 1 : 0) + (currentBonusEffects.invulnerable ? 1 : 0) + (isLaserActiveRef.current ? 1 : 0);
+    
+    if (effectCount > 0) {
+      // 效果面板背景
+      const effectPanelGradient = ctx.createLinearGradient(panelX, effectY, panelX + panelWidth, effectY);
+      effectPanelGradient.addColorStop(0, 'rgba(30, 10, 40, 0.95)');
+      effectPanelGradient.addColorStop(1, 'rgba(40, 15, 50, 0.85)');
+      
+      // 外发光效果
+      ctx.shadowColor = '#aa00ff';
+      ctx.shadowBlur = 15;
+      
+      // 圆角矩形
+      ctx.beginPath();
+      ctx.moveTo(panelX + radius, effectY - 10);
+      ctx.lineTo(panelX + panelWidth - radius, effectY - 10);
+      ctx.quadraticCurveTo(panelX + panelWidth, effectY - 10, panelX + panelWidth, effectY - 10 + radius);
+      ctx.lineTo(panelX + panelWidth, effectY - 10 + effectHeight * effectCount + 10 - radius);
+      ctx.quadraticCurveTo(panelX + panelWidth, effectY - 10 + effectHeight * effectCount + 10, panelX + panelWidth - radius, effectY - 10 + effectHeight * effectCount + 10);
+      ctx.lineTo(panelX + radius, effectY - 10 + effectHeight * effectCount + 10);
+      ctx.quadraticCurveTo(panelX, effectY - 10 + effectHeight * effectCount + 10, panelX, effectY - 10 + effectHeight * effectCount + 10 - radius);
+      ctx.lineTo(panelX, effectY - 10 + radius);
+      ctx.quadraticCurveTo(panelX, effectY - 10, panelX + radius, effectY - 10);
+      ctx.fillStyle = effectPanelGradient;
+      ctx.fill();
+      
+      // 边框
+      ctx.strokeStyle = '#aa00ff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      
+      // 效果标题
+      ctx.font = 'bold 16px monospace';
+      ctx.fillStyle = '#aa00ff';
+      ctx.fillText('ACTIVE EFFECTS', panelX + 20, effectY + 15);
+      effectY += 10;
+    }
     
     if (currentBonusEffects.rapidFire) {
       // 攻击加成效果
       ctx.fillStyle = '#ff6b6b';
-      ctx.font = 'bold 18px Arial';
-      ctx.fillText('⚡ 攻击加成中', 25, effectY + 25);
+      ctx.font = 'bold 14px monospace';
+      ctx.fillText('⚡ RAPID FIRE', panelX + 20, effectY + 35);
       
       // 绘制持续时间进度条
       const rapidFireProgress = Math.max(0, (currentBonusEffects.rapidFireEndTime - now) / 20000);
+      const progressGradient = ctx.createLinearGradient(panelX + 20, 0, panelX + panelWidth - 20, 0);
+      progressGradient.addColorStop(0, '#ff6b6b');
+      progressGradient.addColorStop(1, '#ff4444');
       ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-      ctx.fillRect(25, effectY + 30, 200, 5);
-      ctx.fillStyle = '#ff6b6b';
-      ctx.fillRect(25, effectY + 30, 200 * rapidFireProgress, 5);
+      ctx.fillRect(panelX + 20, effectY + 40, panelWidth - 40, 6);
+      ctx.fillStyle = progressGradient;
+      ctx.fillRect(panelX + 20, effectY + 40, (panelWidth - 40) * rapidFireProgress, 6);
+      
+      // 剩余时间
+      const remainingTime = Math.max(0, Math.floor((currentBonusEffects.rapidFireEndTime - now) / 1000));
+      ctx.font = 'bold 12px monospace';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(`${remainingTime}s`, panelX + panelWidth - 60, effectY + 35);
       
       effectY += effectHeight;
     }
@@ -1112,15 +1388,24 @@ const PlaneGame = () => {
     if (currentBonusEffects.invulnerable) {
       // 无敌效果
       ctx.fillStyle = '#45b7d1';
-      ctx.font = 'bold 18px Arial';
-      ctx.fillText('✨ 无敌状态中', 25, effectY + 25);
+      ctx.font = 'bold 14px monospace';
+      ctx.fillText('✨ INVULNERABLE', panelX + 20, effectY + 35);
       
       // 绘制持续时间进度条
       const invulnerableProgress = Math.max(0, (currentBonusEffects.invulnerableEndTime - now) / 20000);
+      const progressGradient = ctx.createLinearGradient(panelX + 20, 0, panelX + panelWidth - 20, 0);
+      progressGradient.addColorStop(0, '#45b7d1');
+      progressGradient.addColorStop(1, '#00aaff');
       ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-      ctx.fillRect(25, effectY + 30, 200, 5);
-      ctx.fillStyle = '#45b7d1';
-      ctx.fillRect(25, effectY + 30, 200 * invulnerableProgress, 5);
+      ctx.fillRect(panelX + 20, effectY + 40, panelWidth - 40, 6);
+      ctx.fillStyle = progressGradient;
+      ctx.fillRect(panelX + 20, effectY + 40, (panelWidth - 40) * invulnerableProgress, 6);
+      
+      // 剩余时间
+      const remainingTime = Math.max(0, Math.floor((currentBonusEffects.invulnerableEndTime - now) / 1000));
+      ctx.font = 'bold 12px monospace';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(`${remainingTime}s`, panelX + panelWidth - 60, effectY + 35);
       
       effectY += effectHeight;
     }
@@ -1128,20 +1413,38 @@ const PlaneGame = () => {
     if (isLaserActiveRef.current) {
       // 激光模式效果
       ctx.fillStyle = '#00ffff';
-      ctx.font = 'bold 18px Arial';
-      ctx.fillText('💥 激光模式激活', 25, effectY + 25);
+      ctx.font = 'bold 14px monospace';
+      ctx.fillText('💥 LASER MODE', panelX + 20, effectY + 35);
       
       // 绘制持续时间进度条
       const laserProgress = Math.max(0, (laserEndTimeRef.current - now) / 10000);
+      const progressGradient = ctx.createLinearGradient(panelX + 20, 0, panelX + panelWidth - 20, 0);
+      progressGradient.addColorStop(0, '#00ffff');
+      progressGradient.addColorStop(1, '#00aaff');
       ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-      ctx.fillRect(25, effectY + 30, 200, 5);
-      ctx.fillStyle = '#00ffff';
-      ctx.fillRect(25, effectY + 30, 200 * laserProgress, 5);
+      ctx.fillRect(panelX + 20, effectY + 40, panelWidth - 40, 6);
+      ctx.fillStyle = progressGradient;
+      ctx.fillRect(panelX + 20, effectY + 40, (panelWidth - 40) * laserProgress, 6);
+      
+      // 剩余时间
+      const remainingTime = Math.max(0, Math.floor((laserEndTimeRef.current - now) / 1000));
+      ctx.font = 'bold 12px monospace';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(`${remainingTime}s`, panelX + panelWidth - 60, effectY + 35);
       
       effectY += effectHeight;
     }
     
     ctx.restore();
+    
+    // 恢复Camera Shake变换
+    if (cameraShakeRef.current.active) {
+      ctx.restore();
+      const elapsed = now - cameraShakeRef.current.startTime;
+      if (elapsed >= cameraShakeRef.current.duration) {
+        cameraShakeRef.current.active = false;
+      }
+    }
     
     // 游戏状态检查
     if (gameState === 'playing') {
@@ -1159,6 +1462,14 @@ const PlaneGame = () => {
     // 设置Canvas尺寸
     canvas.width = 800;
     canvas.height = 600;
+    
+    // 初始化网格分区
+    gridRef.current = {
+      cells: {},
+      cellSize: 50,
+      width: canvas.width,
+      height: canvas.height
+    };
     
     // 获取当前难度配置 - 移到前面，确保在使用前声明
     const gameConfig = getGameConfig();
@@ -1210,6 +1521,9 @@ const PlaneGame = () => {
     };
     // 重置Boss生成分数
     lastBossSpawnScoreRef.current = 0;
+    
+    // 重置游戏开始时间
+    gameStartTimeRef.current = Date.now();
     
     // 清空游戏对象
     bulletsRef.current = [];
@@ -1369,17 +1683,42 @@ const PlaneGame = () => {
               </Space>
               
               <div style={{ marginTop: '32px', textAlign: 'left' }}>
-                <Title level={5} style={{ color: '#ffffff', marginBottom: '12px' }}>
-                  游戏规则：
+                <Title level={5} style={{ color: '#00d4ff', marginBottom: '16px', textShadow: '0 0 10px rgba(0, 212, 255, 0.5)' }}>
+                  游戏规则
                 </Title>
-                <ul style={{ listStyle: 'none', padding: 0 }}>
-                  <li style={{ marginBottom: '8px' }}>• 鼠标控制飞机移动</li>
-                  <li style={{ marginBottom: '8px' }}>• 自动发射子弹，消灭敌人</li>
-                  <li style={{ marginBottom: '8px' }}>• 小型敌人：1分，1滴血</li>
-                  <li style={{ marginBottom: '8px' }}>• 中型敌人：5分，3滴血</li>
-                  <li style={{ marginBottom: '8px' }}>• 重型敌人：20分，10滴血</li>
-                  <li style={{ marginBottom: '8px' }}>• 被敌人命中3次游戏结束</li>
-                </ul>
+                <div style={{ 
+                  background: 'rgba(30, 30, 50, 0.8)', 
+                  borderRadius: '8px', 
+                  padding: '16px',
+                  border: '1px solid rgba(0, 212, 255, 0.3)'
+                }}>
+                  <div style={{ marginBottom: '12px' }}>
+                    <span style={{ color: '#00d4ff', marginRight: '8px' }}>▶</span>
+                    <span style={{ color: '#ffffff' }}>鼠标控制飞机移动，自动发射子弹</span>
+                  </div>
+                  <div style={{ marginBottom: '12px' }}>
+                    <span style={{ color: '#00ff88', marginRight: '8px' }}>▶</span>
+                    <span style={{ color: '#ffffff' }}>每1000分刷新一个Boss，击败Boss获得所有升级</span>
+                  </div>
+                  <div style={{ marginBottom: '16px' }}>
+                    <span style={{ color: '#ffaa44', marginRight: '8px' }}>▶</span>
+                    <span style={{ color: '#ffffff' }}>敌人信息（简单/困难/噩梦）：</span>
+                  </div>
+                  <div style={{ paddingLeft: '24px', marginBottom: '12px' }}>
+                    <div style={{ color: '#ff6b6b', marginBottom: '4px' }}>• 小型敌人：1分，{difficulty === 'easy' ? '1' : difficulty === 'hard' ? '2' : '3'}滴血</div>
+                    <div style={{ color: '#ffff00', marginBottom: '4px' }}>• 中型敌人：5分，{difficulty === 'easy' ? '3' : difficulty === 'hard' ? '4' : '5'}滴血</div>
+                    <div style={{ color: '#00ff88' }}>• 重型敌人：20分，{difficulty === 'easy' ? '10' : difficulty === 'hard' ? '12' : '15'}滴血</div>
+                  </div>
+                  <div style={{ 
+                    marginTop: '16px', 
+                    padding: '12px', 
+                    background: 'rgba(255, 68, 68, 0.2)', 
+                    borderRadius: '6px',
+                    border: '1px solid rgba(255, 68, 68, 0.5)'
+                  }}>
+                    <span style={{ color: '#ff4444' }}>⚠ 注意：被敌人或子弹命中{difficulty === 'nightmare' ? '直接死亡（噩梦难度）' : '3次游戏结束'}</span>
+                  </div>
+                </div>
               </div>
             </div>
           )}
