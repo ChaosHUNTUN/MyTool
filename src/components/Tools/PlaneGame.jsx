@@ -382,84 +382,207 @@ const PlaneGame = () => {
       const player = playerRef.current;
       const currentLevel = levelRef.current;
       
-      // 根据等级生成不同数量的子弹
+      // 检查是否有攻击加成
+      const hasRapidFire = bonusEffectsRef.current.rapidFire;
+      
+      // 根据等级和攻击加成生成不同数量和属性的子弹
       switch(currentLevel) {
         case 1: // 1级：1个子弹，从中心发射
-          bulletsRef.current.push(new Bullet(
-            player.x, 
-            player.y - player.size, 
-            config.bulletSpeed,
-            currentLevel
-          ));
+          if (hasRapidFire) {
+            // 攻击加成：从中心发射多个散射子弹
+            const angleStep = Math.PI / 4;
+            for (let i = 0; i < 3; i++) {
+              const angle = -Math.PI / 2 + (i - 1) * angleStep;
+              const bullet = new Bullet(
+                player.x, 
+                player.y - player.size, 
+                config.bulletSpeed * 1.5, // 增加子弹速度
+                currentLevel
+              );
+              // 增加子弹大小和伤害
+              bullet.size = 6;
+              bullet.damage = 2;
+              // 添加散射效果
+              bullet.vx = Math.sin(angle) * 2;
+              bulletsRef.current.push(bullet);
+            }
+          } else {
+            // 普通攻击：1个子弹
+            const bullet = new Bullet(
+              player.x, 
+              player.y - player.size, 
+              config.bulletSpeed,
+              currentLevel
+            );
+            bullet.damage = 1;
+            bulletsRef.current.push(bullet);
+          }
           break;
           
         case 2: // 2级：2个子弹，从两侧发射
-          bulletsRef.current.push(new Bullet(
-            player.x - player.size * 0.8, 
-            player.y - player.size, 
-            config.bulletSpeed,
-            currentLevel
-          ));
-          bulletsRef.current.push(new Bullet(
-            player.x + player.size * 0.8, 
-            player.y - player.size, 
-            config.bulletSpeed,
-            currentLevel
-          ));
+          if (hasRapidFire) {
+            // 攻击加成：从两侧各发射多个散射子弹
+            const angleStep = Math.PI / 4;
+            const positions = [
+              player.x - player.size * 0.8, // 左侧
+              player.x + player.size * 0.8  // 右侧
+            ];
+            
+            positions.forEach(posX => {
+              for (let i = 0; i < 2; i++) {
+                const angle = -Math.PI / 2 + (i - 0.5) * angleStep;
+                const bullet = new Bullet(
+                  posX, 
+                  player.y - player.size, 
+                  config.bulletSpeed * 1.5, // 增加子弹速度
+                  currentLevel
+                );
+                // 增加子弹大小和伤害
+                bullet.size = 6;
+                bullet.damage = 2;
+                // 添加散射效果
+                bullet.vx = Math.sin(angle) * 2;
+                bulletsRef.current.push(bullet);
+              }
+            });
+          } else {
+            // 普通攻击：2个子弹
+            bulletsRef.current.push(new Bullet(
+              player.x - player.size * 0.8, 
+              player.y - player.size, 
+              config.bulletSpeed,
+              currentLevel
+            ));
+            bulletsRef.current.push(new Bullet(
+              player.x + player.size * 0.8, 
+              player.y - player.size, 
+              config.bulletSpeed,
+              currentLevel
+            ));
+          }
           break;
           
         case 3: // 3级：3个子弹，从两侧和中心发射
-          bulletsRef.current.push(new Bullet(
-            player.x - player.size, 
-            player.y - player.size, 
-            config.bulletSpeed,
-            currentLevel
-          ));
-          bulletsRef.current.push(new Bullet(
-            player.x, 
-            player.y - player.size, 
-            config.bulletSpeed,
-            currentLevel
-          ));
-          bulletsRef.current.push(new Bullet(
-            player.x + player.size, 
-            player.y - player.size, 
-            config.bulletSpeed,
-            currentLevel
-          ));
+          if (hasRapidFire) {
+            // 攻击加成：从两侧和中心各发射多个散射子弹
+            const angleStep = Math.PI / 4;
+            const positions = [
+              player.x - player.size, // 左侧
+              player.x,              // 中心
+              player.x + player.size  // 右侧
+            ];
+            
+            positions.forEach(posX => {
+              for (let i = 0; i < 2; i++) {
+                const angle = -Math.PI / 2 + (i - 0.5) * angleStep;
+                const bullet = new Bullet(
+                  posX, 
+                  player.y - player.size, 
+                  config.bulletSpeed * 1.5, // 增加子弹速度
+                  currentLevel
+                );
+                // 增加子弹大小和伤害
+                bullet.size = 7;
+                bullet.damage = 3;
+                // 添加散射效果
+                bullet.vx = Math.sin(angle) * 2;
+                bulletsRef.current.push(bullet);
+              }
+            });
+          } else {
+            // 普通攻击：3个子弹
+            bulletsRef.current.push(new Bullet(
+              player.x - player.size, 
+              player.y - player.size, 
+              config.bulletSpeed,
+              currentLevel
+            ));
+            bulletsRef.current.push(new Bullet(
+              player.x, 
+              player.y - player.size, 
+              config.bulletSpeed,
+              currentLevel
+            ));
+            bulletsRef.current.push(new Bullet(
+              player.x + player.size, 
+              player.y - player.size, 
+              config.bulletSpeed,
+              currentLevel
+            ));
+          }
           break;
           
         case 4: // 4级：3个子弹 + 激光（激光在绘制阶段处理）
-          bulletsRef.current.push(new Bullet(
-            player.x - player.size, 
-            player.y - player.size, 
-            config.bulletSpeed,
-            currentLevel
-          ));
-          bulletsRef.current.push(new Bullet(
-            player.x, 
-            player.y - player.size, 
-            config.bulletSpeed,
-            currentLevel
-          ));
-          bulletsRef.current.push(new Bullet(
-            player.x + player.size, 
-            player.y - player.size, 
-            config.bulletSpeed,
-            currentLevel
-          ));
+          if (hasRapidFire) {
+            // 攻击加成：从两侧和中心各发射多个散射子弹
+            const angleStep = Math.PI / 4;
+            const positions = [
+              player.x - player.size, // 左侧
+              player.x,              // 中心
+              player.x + player.size  // 右侧
+            ];
+            
+            positions.forEach(posX => {
+              for (let i = 0; i < 2; i++) {
+                const angle = -Math.PI / 2 + (i - 0.5) * angleStep;
+                const bullet = new Bullet(
+                  posX, 
+                  player.y - player.size, 
+                  config.bulletSpeed * 2, // 增加子弹速度
+                  currentLevel
+                );
+                // 增加子弹大小和伤害
+                bullet.size = 8;
+                bullet.damage = 4;
+                // 添加散射效果
+                bullet.vx = Math.sin(angle) * 2;
+                bulletsRef.current.push(bullet);
+              }
+            });
+          } else {
+            // 普通攻击：3个子弹
+            bulletsRef.current.push(new Bullet(
+              player.x - player.size, 
+              player.y - player.size, 
+              config.bulletSpeed,
+              currentLevel
+            ));
+            bulletsRef.current.push(new Bullet(
+              player.x, 
+              player.y - player.size, 
+              config.bulletSpeed,
+              currentLevel
+            ));
+            bulletsRef.current.push(new Bullet(
+              player.x + player.size, 
+              player.y - player.size, 
+              config.bulletSpeed,
+              currentLevel
+            ));
+          }
           break;
       }
     }
     
-    // 检查是否需要生成Boss
-    if (!bossRef.current && !bossSpawnedRef.current && scoreRef.current - lastBossSpawnScoreRef.current >= bossSpawnThreshold) {
+    // 检查是否需要生成Boss，每获得一千分刷新一个boss
+    if (!bossRef.current && scoreRef.current - lastBossSpawnScoreRef.current >= 1000) {
       // 生成Boss
       const canvas = canvasRef.current;
       if (canvas) {
+        // 让所有非boss类敌人迅速逃离战场
+        enemiesRef.current.forEach(enemy => {
+          // 将敌人状态设置为撤退
+          enemy.state = 'RETREATING';
+          // 增加敌人速度，让它们迅速逃离
+          enemy.speed *= 2;
+        });
+        
+        // 生成Boss
         bossRef.current = new Boss(canvas.width / 2, -100, difficulty);
-        bossSpawnedRef.current = true;
+        // 移除bossSpawnedRef的限制，允许多次生成boss
         lastBossSpawnScoreRef.current = scoreRef.current;
+        
+        console.log('生成新Boss！当前分数:', scoreRef.current, '上次Boss生成分数:', lastBossSpawnScoreRef.current);
       }
     }
     
@@ -480,14 +603,14 @@ const PlaneGame = () => {
     
     // 更新所有敌人位置并检查边界
     enemiesRef.current = enemiesRef.current.filter(enemy => {
-      enemy.update(playerRef.current, canvas.width, canvas.height);
+      enemy.update(playerRef.current, canvas.width, canvas.height, difficulty, enemyBulletsRef);
       // 检查敌人是否飞出屏幕
       return !enemy.isOutOfBounds(canvas.width, canvas.height);
     });
     
     // 更新Boss（如果存在）
     if (bossRef.current) {
-      bossRef.current.update(playerRef.current, canvas.width, canvas.height);
+      bossRef.current.update(playerRef.current, canvas.width, canvas.height, enemyBulletsRef, enemiesRef, config);
       
       // 检查Boss是否死亡
       if (!bossRef.current.isActive) {
@@ -629,7 +752,10 @@ const PlaneGame = () => {
       enemiesRef.current = enemiesRef.current.filter(enemy => {
         if (checkCollision(bullet, enemy)) {
           console.log('子弹击中敌人！', '敌人类型:', enemy.type, '当前生命值:', enemy.health, '敌人得分:', enemy.score);
-          enemy.health--;
+          // 使用子弹的伤害属性，默认伤害为1
+          const damage = bullet.damage || 1;
+          enemy.health -= damage;
+          console.log('子弹伤害:', damage, '敌人生命值减少后:', enemy.health);
           isActive = false;
           
           console.log('敌人生命值减少后:', enemy.health);
@@ -1082,9 +1208,12 @@ const PlaneGame = () => {
       rapidFireEndTime: 0,
       invulnerableEndTime: 0
     };
+    // 重置Boss生成分数
+    lastBossSpawnScoreRef.current = 0;
     
     // 清空游戏对象
     bulletsRef.current = [];
+    enemyBulletsRef.current = [];
     enemiesRef.current = [];
     powerUpsRef.current = []; // 初始化加成包数组
     

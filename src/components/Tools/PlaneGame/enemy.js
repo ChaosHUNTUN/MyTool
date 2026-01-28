@@ -259,11 +259,27 @@ export class Enemy {
   updateHeavyBehavior(player, canvasWidth, canvasHeight) {
     switch(this.state) {
       case EnemyState.PATROLLING:
-        // 贝塞尔曲线移动
+        // 改进的贝塞尔曲线移动，确保敌人不会集中在左上角
         const elapsed = Date.now() - this.trajectory.startTime;
         const curveOffset = Math.sin(elapsed * 0.001) * this.trajectory.curveFactor;
-        this.x += this.trajectory.direction.x * this.speed + curveOffset;
-        this.y += this.trajectory.direction.y * this.speed;
+        
+        // 根据轨迹类型计算移动
+        switch(this.trajectory.type) {
+          case 'diagonal':
+            // 对角线移动，确保方向正确
+            this.x += this.trajectory.direction.x * this.speed;
+            this.y += this.trajectory.direction.y * this.speed;
+            break;
+          case 'curve':
+            // 曲线移动，添加水平偏移
+            this.x += this.trajectory.direction.x * this.speed + curveOffset;
+            this.y += this.trajectory.direction.y * this.speed;
+            break;
+          default:
+            // 直线移动
+            this.x += this.trajectory.direction.x * this.speed;
+            this.y += this.trajectory.direction.y * this.speed;
+        }
         break;
         
       case EnemyState.CHASING:
@@ -322,13 +338,28 @@ export class Enemy {
   }
   
   // 发射普通子弹
-  fireNormalBullet(enemyBulletsRef) {
+  fireNormalBullet(player, enemyBulletsRef) {
+    if (!enemyBulletsRef || !enemyBulletsRef.current) return;
+    
     const bullet = new EnemyBullet(this.x, this.y, 'normal', 5);
+    // 计算朝向玩家的方向
+    const dx = player.x - this.x;
+    const dy = player.y - this.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    if (distance > 0) {
+      // 普通子弹：朝向玩家飞行，但速度较慢
+      bullet.vx = (dx / distance) * bullet.speed * 0.5;
+      bullet.vy = (dy / distance) * bullet.speed;
+    }
+    
     enemyBulletsRef.current.push(bullet);
   }
   
   // 发射追踪子弹
   fireHomingBullet(player, enemyBulletsRef) {
+    if (!enemyBulletsRef || !enemyBulletsRef.current) return;
+    
     const bullet = new EnemyBullet(this.x, this.y, 'homing', 6);
     // 计算追踪方向
     const dx = player.x - this.x;
@@ -344,16 +375,26 @@ export class Enemy {
   }
   
   // 发射散射子弹
-  fireSpreadBullet(difficulty, enemyBulletsRef) {
-    // 发射3-5发子弹，呈扇形分布
+  fireSpreadBullet(player, difficulty, enemyBulletsRef) {
+    if (!enemyBulletsRef || !enemyBulletsRef.current) return;
+    
+    // 发射3-5发子弹，呈扇形分布，朝向玩家方向
     const bulletCount = difficulty === 'hard' ? 3 : 5;
-    const angleStep = Math.PI / (bulletCount - 1);
+    const angleStep = Math.PI / (bulletCount + 1);
+    
+    // 计算朝向玩家的基础角度
+    const dx = player.x - this.x;
+    const dy = player.y - this.y;
+    const baseAngle = Math.atan2(dy, dx);
     
     for (let i = 0; i < bulletCount; i++) {
-      const angle = -Math.PI / 2 + i * angleStep;
+      // 计算每发子弹的角度偏移
+      const angleOffset = (i - Math.floor(bulletCount / 2)) * angleStep;
+      const angle = baseAngle + angleOffset;
       const bullet = new EnemyBullet(this.x, this.y, 'spread', 5);
       
-      bullet.vx = Math.cos(angle) * bullet.speed * 0.5;
+      // 计算子弹速度分量
+      bullet.vx = Math.cos(angle) * bullet.speed;
       bullet.vy = Math.sin(angle) * bullet.speed;
       
       enemyBulletsRef.current.push(bullet);
@@ -361,10 +402,24 @@ export class Enemy {
   }
   
   // 发射激光子弹
-  fireLaserBullet(enemyBulletsRef) {
+  fireLaserBullet(player, enemyBulletsRef) {
+    if (!enemyBulletsRef || !enemyBulletsRef.current) return;
+    
     const bullet = new EnemyBullet(this.x, this.y, 'laser', 4);
-    bullet.vx = 0;
-    bullet.vy = bullet.speed;
+    // 计算朝向玩家的方向
+    const dx = player.x - this.x;
+    const dy = player.y - this.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    if (distance > 0) {
+      // 激光子弹：朝向玩家飞行
+      bullet.vx = (dx / distance) * bullet.speed * 0.3;
+      bullet.vy = (dy / distance) * bullet.speed;
+    } else {
+      // 默认向下飞行
+      bullet.vx = 0;
+      bullet.vy = bullet.speed;
+    }
     enemyBulletsRef.current.push(bullet);
   }
   
@@ -384,23 +439,23 @@ export class Enemy {
     
     switch(attackType) {
       case 'normal':
-        // 普通攻击：单发子弹
-        this.fireNormalBullet(enemyBulletsRef);
+        // 普通攻击：单发子弹，朝向玩家飞行
+        this.fireNormalBullet(player, enemyBulletsRef);
         break;
         
       case 'homing':
-        // 追踪攻击：发射追踪子弹
+        // 追踪攻击：发射追踪子弹，速度更快
         this.fireHomingBullet(player, enemyBulletsRef);
         break;
         
       case 'spread':
         // 散射攻击：发射多方向子弹
-        this.fireSpreadBullet(difficulty, enemyBulletsRef);
+        this.fireSpreadBullet(player, difficulty, enemyBulletsRef);
         break;
         
       case 'laser':
-        // 激光攻击：发射激光束
-        this.fireLaserBullet(enemyBulletsRef);
+        // 激光攻击：发射激光束，朝向玩家
+        this.fireLaserBullet(player, enemyBulletsRef);
         break;
     }
   }
@@ -450,12 +505,13 @@ export class Enemy {
       this.shadowColor = this.color;
     }
     
-    // 添加边界限制，根据状态决定是否限制在屏幕内
-    // 只有在巡逻、追逐和攻击状态下才限制在屏幕内
-    // 逃跑状态下允许离开屏幕
+    // 添加边界限制，禁止敌人在屏幕边缘移动
+    // 所有状态下都限制敌人在屏幕内，除了逃跑状态允许离开
     if (this.state === EnemyState.PATROLLING || this.state === EnemyState.CHASING || this.state === EnemyState.ATTACKING) {
-      this.x = Math.max(this.size, Math.min(canvasWidth - this.size, this.x));
-      this.y = Math.max(this.size, Math.min(canvasHeight - this.size, this.y));
+      // 增加屏幕边缘的安全距离，防止敌人靠近边缘
+      const edgeMargin = this.size * 2;
+      this.x = Math.max(edgeMargin, Math.min(canvasWidth - edgeMargin, this.x));
+      this.y = Math.max(edgeMargin, Math.min(canvasHeight - edgeMargin, this.y));
     }
   }
   
